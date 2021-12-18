@@ -27,10 +27,9 @@ class GaussianBlur:
 
     def __call__(self, img):
         map_max = img.max()
-        final_map = self.load(
+        return self.load(
             self.unload(img[0]/map_max).filter(self.blur_kernel)
         )*map_max
-        return final_map
 
 
 def get_coreset_idx_randomp(
