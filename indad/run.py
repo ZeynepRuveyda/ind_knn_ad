@@ -25,12 +25,7 @@ def run_model(method: str, classes: List):
     results = {}
 
     for cls in classes:
-        if method == "spade":
-            model = SPADE(
-                k=50,
-                backbone_name="wide_resnet50_2",
-            )
-        elif method == "padim":
+        if method == "padim":
             model = PaDiM(
                 d_reduced=350,
                 backbone_name="wide_resnet50_2",
@@ -41,6 +36,11 @@ def run_model(method: str, classes: List):
                 backbone_name="wide_resnet50_2",
             )
 
+        elif method == "spade":
+            model = SPADE(
+                k=50,
+                backbone_name="wide_resnet50_2",
+            )
         print(f"\n█│ Running {method} on {cls} dataset.")
         print(  f" ╰{'─'*(len(method)+len(cls)+23)}\n")
         train_ds, test_ds = MVTecDataset(cls).get_dataloaders()
@@ -49,34 +49,29 @@ def run_model(method: str, classes: List):
         model.fit(train_ds)
         print("   Testing ...")
         image_rocauc, pixel_rocauc = model.evaluate(test_ds)
-        
+
         print(f"\n   ╭{'─'*(len(cls)+15)}┬{'─'*20}┬{'─'*20}╮")
         print(  f"   │ Test results {cls} │ image_rocauc: {image_rocauc:.2f} │ pixel_rocauc: {pixel_rocauc:.2f} │")
         print(  f"   ╰{'─'*(len(cls)+15)}┴{'─'*20}┴{'─'*20}╯")
         results[cls] = [float(image_rocauc), float(pixel_rocauc)]
-        
+
     image_results = [v[0] for _, v in results.items()]
     average_image_roc_auc = sum(image_results)/len(image_results)
     image_results = [v[1] for _, v in results.items()]
     average_pixel_roc_auc = sum(image_results)/len(image_results)
 
-    total_results = {
+    return {
         "per_class_results": results,
         "average image rocauc": average_image_roc_auc,
         "average pixel rocauc": average_pixel_roc_auc,
         "model parameters": model.get_parameters(),
     }
-    return total_results
 
 @click.command()
 @click.argument("method")
 @click.option("--dataset", default="all", help="Dataset, defaults to all datasets.")
 def cli_interface(method: str, dataset: str): 
-    if dataset == "all":
-        dataset = ALL_CLASSES
-    else:
-        dataset = [dataset]
-
+    dataset = ALL_CLASSES if dataset == "all" else [dataset]
     method = method.lower()
     assert method in ALLOWED_METHODS, f"Select from {ALLOWED_METHODS}."
 
